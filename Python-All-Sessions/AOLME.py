@@ -93,8 +93,8 @@ def hex_to_color(s):
     RGB tuple as (r,g,b) in decimal format
     '''    
     hexColorPattern = re.compile("\A#[a-fA-F0-9]{6}\Z")
-    if not isinstance(s, basestring):
-        raise TypeError('hex2color requires a string argument')
+    #if not isinstance(s, basestring):
+    #    raise TypeError('hex2color requires a string argument')
     if hexColorPattern.match(s) is None:
         raise ValueError('invalid hex color string "%s"' % s)
     return tuple([int(n, 16)/255.0 for n in (s[1:3], s[3:5], s[5:7])])
@@ -287,7 +287,8 @@ def vid_show(vid,fps):    #previously aolme_vidshow
   A visual animation containing each frame in the order listed. Returns the animation.
   
   '''
-    matrixf = make_rgb(vid[0]) 
+    #matrixf = make_rgb(vid[0])
+    matrixf=vid[0]
     if not grid_lines:
         fig = pyplot.figure(2)
         pyplot.tick_params(axis='both', which='both', bottom='off', top='off', labelbottom='off', right='off', left='off', labelleft='off')
