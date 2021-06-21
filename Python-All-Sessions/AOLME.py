@@ -310,7 +310,8 @@ def vid_show(vid,fps):    #previously aolme_vidshow
     # function to update figure
     def update_fig(j):
         # set the data in the axesimage object
-        frame = make_rgb(vid[j])
+        #frame = make_rgb(vid[j])
+        frame=vid[j]
         im.set_array(frame)
         pyplot.draw()
         return im,
