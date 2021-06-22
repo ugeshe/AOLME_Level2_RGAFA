@@ -557,15 +557,15 @@ class spr:
         
         # Re-center
         min_row, min_col, max_row, max_col = read_sprite_rec
-        
+        #print( min_row, min_col, max_row, max_col)
         print(read_sprite_roi.shape)
         
         self.num_of_rows = max_row-min_row
         self.num_of_cols = max_col-min_col
         self.sprite_rec = [0, 0, self.num_of_rows, self.num_of_cols]        
-        self.sprite_img = read_sprite_img[int(min_row):int(max_row+1), int(min_col):int(max_col+1),:]
-        self.sprite_roi = read_sprite_roi[int(min_row):int(max_row+1), int(min_col):int(max_col+1)]
-                
+        self.sprite_img = read_sprite_img[int(min_row):int(max_row), int(min_col):int(max_col),:]
+        self.sprite_roi = read_sprite_roi
+        #print(self.sprite_roi.shape)      
         
     def fill(self, rows, cols, color):
         """
@@ -611,6 +611,8 @@ class spr:
         
         
         maskObj=np.zeros((sprite_size_rows,sprite_size_cols,3),  dtype=np.uint8)
+        #print(sprite_size_rows,sprite_size_cols)
+        
         maskObj[:,:,0]=objroi
         maskObj[:,:,1]=objroi
         maskObj[:,:,2]=objroi
