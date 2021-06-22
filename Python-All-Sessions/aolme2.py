@@ -564,7 +564,7 @@ class spr:
         self.num_of_cols = max_col-min_col
         self.sprite_rec = [0, 0, self.num_of_rows, self.num_of_cols]        
         self.sprite_img = read_sprite_img[int(min_row):int(max_row), int(min_col):int(max_col),:]
-        self.sprite_roi = read_sprite_roi
+        self.sprite_roi = read_sprite_roi[int(min_row):int(max_row), int(min_col):int(max_col)]
         #print(self.sprite_roi.shape)      
         
     def fill(self, rows, cols, color):
