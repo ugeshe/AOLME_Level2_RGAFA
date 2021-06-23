@@ -220,8 +220,8 @@ class TSP:
             c1 = (c1[1], c1[0])
             c2 = (c2[1], c2[0])                        
             plt.plot((c1[0], c2[0]), (c1[1], c2[1]), 'b-')
-            circle1=plt.Circle(c1, radius=1, color='r', fill=False)
-            circle2=plt.Circle(c2, radius=1, color='r', fill=False)                      
+            circle1=plt.Circle(c1, radius=0.5, color='r', fill=False)
+            circle2=plt.Circle(c2, radius=0.5, color='r', fill=False)                      
             plt.gcf().gca().add_artist(circle1)
             plt.gcf().gca().add_artist(circle2)
             plt.text(c1[0]+offset, c1[1]+offset, str(j1+1), fontsize=14)
@@ -565,7 +565,7 @@ class spr:
         self.sprite_rec = [0, 0, self.num_of_rows, self.num_of_cols]        
         self.sprite_img = read_sprite_img[int(min_row):int(max_row), int(min_col):int(max_col),:]
         self.sprite_roi = read_sprite_roi[int(min_row):int(max_row), int(min_col):int(max_col)]
-        #print(self.sprite_roi.shape)      
+        print(self.sprite_roi.shape)      
         
     def fill(self, rows, cols, color):
         """
@@ -611,7 +611,7 @@ class spr:
         
         
         maskObj=np.zeros((sprite_size_rows,sprite_size_cols,3),  dtype=np.uint8)
-        #print(sprite_size_rows,sprite_size_cols)
+        print(sprite_size_rows,sprite_size_cols)
         
         maskObj[:,:,0]=objroi
         maskObj[:,:,1]=objroi
