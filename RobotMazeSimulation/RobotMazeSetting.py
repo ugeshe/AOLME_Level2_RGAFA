@@ -47,6 +47,7 @@ class RobotMazeSetting:
         self.final=False
         self.total_time = 0  
         self.frame_list = frame_list
+        self.time = True
 
         
     def gen_maze(self):
@@ -89,6 +90,7 @@ class RobotMazeSetting:
             (self.frame_list).append(view)
             
             self.run=False
+            self.time = False
             return
             #pygame.quit()
         else:
@@ -157,6 +159,8 @@ class RobotMazeSetting:
             if self.run == False:
                 print("Cannot move forward")
                 self.run_game()
+                if self.time==False:
+                    pygame.quit()
                 break
      
         return self.collision, self.final
