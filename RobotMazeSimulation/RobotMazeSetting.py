@@ -79,7 +79,7 @@ class RobotMazeSetting:
         self.all_group.draw(self.window)
         
         
-        if self.total_time > 12:
+        if self.total_time > 1000:
             #pygame.display.flip()
             myFont = pygame.font.SysFont("arial", 25)
             time_label_new   = myFont.render("Time is over!!! ", 1, (214, 49, 104))
