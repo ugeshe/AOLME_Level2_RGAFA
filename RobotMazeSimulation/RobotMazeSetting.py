@@ -162,7 +162,7 @@ class RobotMazeSetting:
             
                 break
      
-        return self.collision, self.final
+        return self.collision, self.final, self.time
     
     
     def bw(self, sec):
