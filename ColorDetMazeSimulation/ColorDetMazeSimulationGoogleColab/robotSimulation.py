@@ -11,10 +11,12 @@ import pygame
 from settings import Settings
 from robot import Robot
 from maze import Maze
-from mario import Mario
-from snoopy import Snoopy
-from panda import Panda
-from lobo import Lobo
+# =============================================================================
+# from mario import Mario
+# from snoopy import Snoopy
+# from panda import Panda
+# from lobo import Lobo
+# =============================================================================
 import matplotlib.pyplot as plt
 import math
 
