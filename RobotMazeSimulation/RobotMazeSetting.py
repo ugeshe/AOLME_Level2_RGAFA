@@ -104,26 +104,26 @@ class RobotMazeSetting:
             (self.frame_list).append(view)
             
             
-        collide = pygame.sprite.spritecollide(self.sprite, self.maze_group, False)
-        final = pygame.sprite.spritecollide(self.sprite, self.final_group, False)
-        if bool(final) == True:
-            print('Robot is free!!!')
-            self.final = True
-            self.run = False
-            return 
+            collide = pygame.sprite.spritecollide(self.sprite, self.maze_group, False)
+            final = pygame.sprite.spritecollide(self.sprite, self.final_group, False)
+            if bool(final) == True:
+                print('Robot is free!!!')
+                self.final = True
+                self.run = False
+                return 
         
-        if bool(collide)==True:
-            self.collision = True
-            print('Cannot move')
-            self.run = False
-            
-            return 
-        else:
-            self.collision = False
-            self.run = True
-        
-            pygame.display.flip()
-            pygame.time.Clock().tick(40)
+            if bool(collide)==True:
+                self.collision = True
+                print('Cannot move')
+                self.run = False
+                
+                return 
+            else:
+                self.collision = False
+                self.run = True
+                
+                pygame.display.flip()
+                pygame.time.Clock().tick(40)
 
         return 
         
