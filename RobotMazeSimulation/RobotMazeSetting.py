@@ -159,8 +159,7 @@ class RobotMazeSetting:
             if self.run == False:
                 print("Cannot move forward")
                 self.run_game()
-                if self.time==False:
-                    pygame.quit()
+            
                 break
      
         return self.collision, self.final
