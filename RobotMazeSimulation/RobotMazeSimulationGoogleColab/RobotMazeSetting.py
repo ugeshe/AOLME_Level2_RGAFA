@@ -191,7 +191,7 @@ class RobotMazeSetting:
                 self.run_game()
                 break
        
-        return self.collision, self.final
+        return self.collision, self.final, self.time
     
     def rt(self, sec):
         print('Move right {}s'.format(sec))
@@ -219,7 +219,7 @@ class RobotMazeSetting:
                 self.run_game()
                 break
         
-        return self.collision, self.final
+        return self.collision, self.final, self.time
     
     
     def lt(self, sec):
@@ -249,7 +249,7 @@ class RobotMazeSetting:
                 break
         
         
-        return self.collision, self.final
+        return self.collision, self.final, self.time
     
     
     
