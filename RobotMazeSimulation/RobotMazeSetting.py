@@ -88,7 +88,9 @@ class RobotMazeSetting:
             view = view.transpose([1, 0, 2])
             (self.frame_list).append(view)
             
-            pygame.quit()
+            self.run=False
+            return
+            #pygame.quit()
         else:
             
             myFont = pygame.font.SysFont("arial", 18)
