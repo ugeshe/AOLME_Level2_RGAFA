@@ -173,6 +173,9 @@ class Robot:
                     self.x = self.x + math.sin(self.angle/180*math.pi)*self.settings.robot_speed
                     self.y = self.y + math.cos(self.angle/180*math.pi)*self.settings.robot_speed
                     print("Move backward", self.rect.x, self.rect.y)
+                    collision = False
+                else:
+                    collision = True
                     
             elif (self.angle>90 and self.angle<=180 and
                   self.rect.top > self.settings.robot_margin
@@ -184,6 +187,9 @@ class Robot:
                     self.x = self.x + math.sin((180-self.angle)/180*math.pi)*self.settings.robot_speed
                     self.y = self.y - math.cos((180-self.angle)/180*math.pi)*self.settings.robot_speed
                     print("Move backward", self.rect.x, self.rect.y)
+                    collision = False
+                else:
+                    collision = True
                     
             elif (self.angle>180 and self.angle<=270 and
                   self.rect.top > self.settings.robot_margin
@@ -195,6 +201,9 @@ class Robot:
                     self.x = self.x - math.sin((self.angle-180)/180*math.pi)*self.settings.robot_speed
                     self.y = self.y - math.cos((self.angle-180)/180*math.pi)*self.settings.robot_speed 
                     print("Move backward", self.rect.x, self.rect.y)
+                    collision = False
+                else:
+                    collision = True
                     
             elif (self.angle>270 and self.angle<=360 and
                   self.rect.bottom < self.screen_rect.bottom - self.settings.robot_margin
@@ -208,8 +217,13 @@ class Robot:
                     self.x = self.x - math.sin((360-self.angle)/180*math.pi)*self.settings.robot_speed
                     self.y = self.y + math.cos((360-self.angle)/180*math.pi)*self.settings.robot_speed
                     print("Move backward", self.rect.x, self.rect.y)
+                    collision = False
+                else:
+                    collision = True
             else:
                 print("Cannot move backward")
+                collision = True
+        return collision
                 
     def rt(self):
         pygame.time.delay(100)
@@ -224,6 +238,9 @@ class Robot:
                     self.x = self.x + math.cos(self.angle/180*math.pi)*self.settings.robot_speed
                     self.y = self.y - math.sin(self.angle/180*math.pi)*self.settings.robot_speed
                     print("Move right", self.rect.x, self.rect.y)
+                    collision = False
+                else:
+                    collision = True
                     
             elif (self.angle>90 and self.angle<=180 and
                   self.rect.top > self.settings.robot_margin
@@ -235,6 +252,9 @@ class Robot:
                     self.x = self.x - math.cos((180-self.angle)/180*math.pi)*self.settings.robot_speed
                     self.y = self.y - math.sin((180-self.angle)/180*math.pi)*self.settings.robot_speed
                     print("Move right", self.rect.x, self.rect.y)
+                    collision = False
+                else:
+                    collision = True
                     
             elif (self.angle>180 and self.angle<=270 and
                   self.rect.bottom < self.screen_rect.bottom - self.settings.robot_margin
@@ -248,6 +268,9 @@ class Robot:
                     self.x = self.x - math.cos((self.angle-180)/180*math.pi)*self.settings.robot_speed
                     self.y = self.y + math.sin((self.angle-180)/180*math.pi)*self.settings.robot_speed  
                     print("Move right", self.rect.x, self.rect.y)
+                    collision = False
+                else:
+                    collision = True
                     
             elif (self.angle>270 and self.angle<=360 and
                   self.rect.bottom < self.screen_rect.bottom - self.settings.robot_margin
@@ -261,8 +284,13 @@ class Robot:
                     self.x = self.x + math.cos((360-self.angle)/180*math.pi)*self.settings.robot_speed
                     self.y = self.y + math.sin((360-self.angle)/180*math.pi)*self.settings.robot_speed
                     print("Move right", self.rect.x, self.rect.y)
+                    collision = False
+                else:
+                    collision = True
             else:
                 print("Cannot move right")
+                collision = True
+        return collision
     
     def lt(self):
         pygame.time.delay(100)
@@ -279,7 +307,10 @@ class Robot:
                     self.x = self.x - math.cos(self.angle/180*math.pi)*self.settings.robot_speed
                     self.y = self.y + math.sin(self.angle/180*math.pi)*self.settings.robot_speed
                     print("Move left", self.rect.x, self.rect.y)
-            
+                    collision = False
+                else:
+                    collision = True
+                    
             elif (self.angle>90 and self.angle<=180 and
                   self.rect.bottom < self.screen_rect.bottom - self.settings.robot_margin
                   and self.rect.right  < self.screen_rect.right - self.settings.robot_margin):
@@ -292,7 +323,10 @@ class Robot:
                     self.x = self.x + math.cos((180-self.angle)/180*math.pi)*self.settings.robot_speed
                     self.y = self.y + math.sin((180-self.angle)/180*math.pi)*self.settings.robot_speed
                     print("Move left", self.rect.x, self.rect.y)
-            
+                    collision = False
+                else:
+                    collision = True
+                    
             elif (self.angle>180 and self.angle<=270 and
                   self.rect.top > self.settings.robot_margin
                   and self.rect.right  < self.screen_rect.right - self.settings.robot_margin):
@@ -303,7 +337,10 @@ class Robot:
                     self.x = self.x + math.cos((self.angle-180)/180*math.pi)*self.settings.robot_speed
                     self.y = self.y - math.sin((self.angle-180)/180*math.pi)*self.settings.robot_speed               
                     print("Move left", self.rect.x, self.rect.y)
-            
+                    collision = False
+                else:
+                    collision = True
+                    
             elif (self.angle>270 and self.angle<=360 and
                   self.rect.top > self.settings.robot_margin
                 and self.rect.left > self.settings.robot_margin):
@@ -314,9 +351,13 @@ class Robot:
                     self.x = self.x - math.cos((360-self.angle)/180*math.pi)*self.settings.robot_speed
                     self.y = self.y - math.sin((360-self.angle)/180*math.pi)*self.settings.robot_speed
                     print("Move left", self.rect.x, self.rect.y) 
-    
+                    collision = False
+                else:
+                    collision = True
             else:
                 print("Cannot move left")
+                collision = True
+        return collision
                     
         
     

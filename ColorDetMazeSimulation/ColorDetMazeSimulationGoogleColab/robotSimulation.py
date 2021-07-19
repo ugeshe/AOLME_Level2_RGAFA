@@ -23,7 +23,7 @@ import math
 class RobotSimulation:
     """ Overall class to manage game assets and behavior. """
     
-    def __init__(self, detect_color):
+    def __init__(self, detect_color, frame_list):
         """ Initialize the game and create game resources. """
         pygame.init()
         self.settings = Settings()
@@ -57,7 +57,8 @@ class RobotSimulation:
         
         self.movement = False
         self.total_time = 0      
-        
+        self.frame_list = frame_list
+        self.time = True
         
     def fw(self, sec):
         for i in range(1, sec+1):
@@ -67,7 +68,7 @@ class RobotSimulation:
             self.robot.update()
             self.maze.draw_maze()
             self._update_screen()
-        return collision
+        return collision, self.time
             
             
             
@@ -75,30 +76,33 @@ class RobotSimulation:
         for i in range(1, sec+1):
             self.total_time = self.total_time + 1
             self.robot.movement = True  
-            self.robot.bw()
+            collision = self.robot.bw()
             self.robot.update()
             self.maze.draw_maze()
             self._update_screen()
+        return collision, self.time
         #return dis_robot_color
             
     def rt(self, sec):
         for i in range(1, sec+1):
             self.total_time = self.total_time + 1
             self.robot.movement = True
-            self.robot.rt()
+            collision = self.robot.rt()
             self.robot.update()
             self.maze.draw_maze()
             self._update_screen()
+        return collision, self.time
         #return dis_robot_color
             
     def lt(self, sec):
         for i in range(1, sec+1):
             self.total_time = self.total_time + 1
             self.robot.movement = True  
-            self.robot.lt()
+            collision = self.robot.lt()
             self.robot.update()
             self.maze.draw_maze()
             self._update_screen()
+        return collision, self.time
         #return dis_robot_color
             
     def rtd(self, angle):
@@ -246,6 +250,13 @@ class RobotSimulation:
                 myFont = pygame.font.SysFont("arial", 25)
                 time_label_new   = myFont.render("Time is over!!! ", 1, (214, 49, 104))
                 self.screen.blit(time_label_new, (560, 200))
+                
+                view = pygame.surfarray.array3d(self.window)
+                view = view.transpose([1, 0, 2])
+                (self.frame_list).append(view)
+                
+                self.time = False
+            
             else:
                 self.screen.blit(time_label, (560, 200))
                 self.screen.blit(time_display, (700, 200))
