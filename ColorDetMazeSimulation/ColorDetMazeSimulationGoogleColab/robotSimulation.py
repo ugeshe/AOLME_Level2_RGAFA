@@ -251,18 +251,23 @@ class RobotSimulation:
                 time_label_new   = myFont.render("Time is over!!! ", 1, (214, 49, 104))
                 self.screen.blit(time_label_new, (560, 200))
                 
-                view = pygame.surfarray.array3d(self.screen)
-                view = view.transpose([1, 0, 2])
-                (self.frame_list).append(view)
-                
+# =============================================================================
+#                 view = pygame.surfarray.array3d(self.screen)
+#                 view = view.transpose([1, 0, 2])
+#                 (self.frame_list).append(view)
+#                 
+# =============================================================================
                 self.time = False
             
             else:
                 self.screen.blit(time_label, (560, 200))
                 self.screen.blit(time_display, (700, 200))
-                view = pygame.surfarray.array3d(self.screen)
-                view = view.transpose([1, 0, 2])
-                (self.frame_list).append(view)
+                
+# =============================================================================
+#                 view = pygame.surfarray.array3d(self.screen)
+#                 view = view.transpose([1, 0, 2])
+#                 (self.frame_list).append(view)
+# =============================================================================
             
             self.screen.blit(message_1, (600, 300))
             
@@ -298,18 +303,22 @@ class RobotSimulation:
                 time_label_new   = myFont.render("Time is over!!! ", 1, (214, 49, 104))
                 self.screen.blit(time_label_new, (560, 200))
                 
-                view = pygame.surfarray.array3d(self.screen)
-                view = view.transpose([1, 0, 2])
-                (self.frame_list).append(view)
-                
+# =============================================================================
+#                 view = pygame.surfarray.array3d(self.screen)
+#                 view = view.transpose([1, 0, 2])
+#                 (self.frame_list).append(view)
+#                 
+# =============================================================================
             else:
                 self.screen.blit(time_label, (560, 200))
                 self.screen.blit(time_display, (700, 200))
                 
-                view = pygame.surfarray.array3d(self.screen)
-                view = view.transpose([1, 0, 2])
-                (self.frame_list).append(view)
-                
+# =============================================================================
+#                 view = pygame.surfarray.array3d(self.screen)
+#                 view = view.transpose([1, 0, 2])
+#                 (self.frame_list).append(view)
+#                 
+# =============================================================================
                 
             self.screen.blit(message_2, (600, 300))
         
@@ -323,6 +332,9 @@ class RobotSimulation:
 # =============================================================================
         # Make the most recently drawn screen visible.q
             pygame.display.flip()
+        view = pygame.surfarray.array3d(self.screen)
+        view = view.transpose([1, 0, 2])
+        (self.frame_list).append(view)
             
         
         return dis_robot_color
