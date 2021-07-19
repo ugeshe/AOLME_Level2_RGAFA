@@ -260,7 +260,9 @@ class RobotSimulation:
             else:
                 self.screen.blit(time_label, (560, 200))
                 self.screen.blit(time_display, (700, 200))
-            
+                view = pygame.surfarray.array3d(self.window)
+                view = view.transpose([1, 0, 2])
+                (self.frame_list).append(view)
             
             self.screen.blit(message_1, (600, 300))
             
