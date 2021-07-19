@@ -251,7 +251,7 @@ class RobotSimulation:
                 time_label_new   = myFont.render("Time is over!!! ", 1, (214, 49, 104))
                 self.screen.blit(time_label_new, (560, 200))
                 
-                view = pygame.surfarray.array3d(self.window)
+                view = pygame.surfarray.array3d(self.screen)
                 view = view.transpose([1, 0, 2])
                 (self.frame_list).append(view)
                 
@@ -260,7 +260,7 @@ class RobotSimulation:
             else:
                 self.screen.blit(time_label, (560, 200))
                 self.screen.blit(time_display, (700, 200))
-                view = pygame.surfarray.array3d(self.window)
+                view = pygame.surfarray.array3d(self.screen)
                 view = view.transpose([1, 0, 2])
                 (self.frame_list).append(view)
             
