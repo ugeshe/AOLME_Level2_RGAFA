@@ -15,10 +15,8 @@ class Widgets():
         self.img = img
         (self.row, self.column, self.channel) = (self.img).shape
         
-    def DisplayData(self, Row, Column, Red, Green, Blue):
+    def DisplayData(self, Row, Column):
         fig = plt.figure(figsize=(10, 10))
-        
-        
         
         pixel = self.img[Row:Row+1, Column:Column+1]
         (b, g, r) = self.img[Row, Column]
@@ -27,7 +25,7 @@ class Widgets():
         img_copy[max(0, Row-1):min(self.row-1, Row+1), max(0, Column-5):min(self.column-1, Column+5)] = (3, 186, 252)
         
         
-        plt.xticks([]),plt.yticks([]) # Turn off the x and y coordinates
+        #plt.xticks([]),plt.yticks([]) # Turn off the x and y coordinates
         plt.imshow(cv2.cvtColor(img_copy, cv2.COLOR_BGR2RGB))
         plt.title('The seleted pixel is marked')
         
