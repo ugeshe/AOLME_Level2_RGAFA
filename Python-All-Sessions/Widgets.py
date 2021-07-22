@@ -16,7 +16,7 @@ class Widgets():
         (self.row, self.column, self.channel) = (self.img).shape
         
     def DisplayData(self, Row, Column):
-        fig = plt.figure(figsize=(10, 10))
+        #fig = plt.figure(figsize=(10, 10))
         
         pixel = self.img[Row:Row+1, Column:Column+1]
         (b, g, r) = self.img[Row, Column]
