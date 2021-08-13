@@ -279,7 +279,7 @@ def vid_show(vid,fps):    #previously aolme_vidshow
                 # frame = frame[0:20,0:20]
                 # vid[i]=frame
                 # i+=1
-        
+    print('666666')   
     im = pyplot.imshow(cv2.cvtColor(vid[0], cv2.COLOR_BGR2RGB), interpolation='none')
          
     # function to update figure
