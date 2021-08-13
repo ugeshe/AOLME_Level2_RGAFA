@@ -286,7 +286,7 @@ def vid_show(vid,fps):    #previously aolme_vidshow
     def update_fig(j):
         # set the data in the axesimage object
         #frame = make_rgb(vid[j])
-        im.set_array(vid[j])
+        im.set_array(cv2.cvtColor(vid[j], cv2.COLOR_BGR2RGB))
         pyplot.draw()
         return im,
   
