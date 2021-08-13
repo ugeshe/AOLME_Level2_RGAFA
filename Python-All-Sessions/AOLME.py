@@ -1,725 +1,730 @@
-import cv2
-import os
-import sys
-import matplotlib.pyplot as pyplot
-from matplotlib import animation as animation
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Sep 14 12:51:20 2017
+
+@author: Wenjing Shi
+"""
 import numpy as np
-import re 
+import cv2
+import math
+import pylab as pl
+from roipoly import roipoly
+#import winsound
+import time
+import smtplib
+import mimetypes
+from email.mime.multipart import MIMEMultipart
+from email import encoders
+from email.message import Message
+from email.mime.audio import MIMEAudio
+from email.mime.base import MIMEBase
+from email.mime.image import MIMEImage
+from email.mime.text import MIMEText
 
-grid_lines = True
-SAFE = True 
-easy_messages = None #if you don't want traceback turn this on
 
-if easy_messages:
-    sys.tracebacklimit = 0
 
-def grid_lines_on(width, height):
-    fig1, ax = pyplot.subplots() # make figure 
-    ax.grid(linestyle='-',linewidth=0.5)
+
+def ROI(img):
+    
+    pl.imshow(cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
+    rp = roipoly(roicolor='r') 
+    roi_mask = rp.getMask(img)
+       
+    return roi_mask
+
+
+class Robot:
+    """Fast digital video simulator for small videos that fit in memory.
+       Usage example: ? Provide usage example here.
+    """ 
+    # Initialize the dictionary of background and object images.
+    dic_of_back_imgs = {}  
+    dic_of_obj_imgs  = {}
+    dic_of_obj_rot  = {}
+    
+    frame_ps = 35
+    #
+    
+  
+    #####################################
+    def __init__(self, video_name, num_of_rows, num_of_cols, speed):
+        """Constructor that stores video name and video size."""
+        self.num_img = 1
+        self.video_name = video_name
+        self.num_of_rows = num_of_rows
+        self.num_of_cols = num_of_cols
+        self.video      = []
+        self.obj_locs   = {}
+        self.out = cv2.VideoWriter(video_name, cv2.VideoWriter_fourcc(*"MJPG"), self.frame_ps, (self.num_of_cols, self.num_of_rows))
+        self.px_frame = speed/self.frame_ps  # px/per_frame
+        #print('(self.num_of_cols, self.num_of_rows) = ', self.num_of_cols, self.num_of_rows)
+        print("(Initializing {})".format(self.video_name))
         
-    xticks = np.arange(-0.5,height -0.5,1)
-    yticks = np.arange(-0.5, width-0.5,1)
-
-    ax.set_xticks(xticks)
-    ax.set_xticklabels([int(y+0.5) for y in xticks])
-    ax.set_yticks(yticks )
-    ax.set_yticklabels([int(x+0.5) for x in yticks ])
-    return fig1,ax
-
-def check_input(img,which_lib):
-    if img is None:
-        #only need to do this once for the entire thing
-        raise TypeError('You input an image with '+str(type(img))+', check your file path, you may have typed it incorrectly.')
-            
-    if which_lib == 'cv':
-        if isinstance(img,np.ndarray):
-            if SAFE:
-                if img.dtype!=np.uint8:
-                    print ("Type mismatch...converting for you...")
-                    #im_show(img)
-                    img = matrix_to_img(img)
-                    return img
-                else:
-                    return img
-            else:
-                if img.dtype!=np.uint8:
-                    raise TypeError("Type mismatch...check your input! You may need to use matrix_to_img().")
-                else:
-                    return img
-        else: #this case is a list
-            if SAFE:
-                    print ("Type mismatch...converting for you...")
-                    #im_show(img)
-                    img = matrix_to_img(img)
-                    return img
-            else:
-                    raise TypeError("Type mismatch...check your input! You may need to use matrix_to_img().")
-            
-    if which_lib == 'custom':
-        if isinstance(img,np.ndarray):
-                if img.dtype==np.uint8:
-                    raise TypeError ("Type mismatch...Check your input! These functions do not work with OpenCV images.")
-    if which_lib == 'save_list':
-        if isinstance(img,np.ndarray):
-            if img.dtype!=np.uint8:
-                img = matrix_to_img(img)
-                return img
-            else:
-                return img
-        else: 
-            raise TypeError("Type mismatch...Check your input!")
-
-def check_format(input):
-    '''
-    Function to check that student input is in string format, will correct for them in safe mode.
-    '''	
-    if type(input) != np.string_:
-        #print type(input)
-        if SAFE:
-	        #print "Input was not in string format, be sure to use quotes, correcting for you..."
-	        return str(input)
-        else:
-	        raise TypeError ("Input is not in string format, please correct this by using quotes.")
-    else:
-        return input
-    
-def hex_to_color(s):
-    ''' Helper function for translating hex input to RGB color strings, used in makergb.
-  
-    Inputs: 
-    s: hex color string without # prefix
-  
-    Outputs:
-    RGB tuple as (r,g,b) in decimal format
-    '''    
-    hexColorPattern = re.compile("\A#[a-fA-F0-9]{6}\Z")
-    #if not isinstance(s, basestring):
-    #    raise TypeError('hex2color requires a string argument')
-    if hexColorPattern.match(s) is None:
-        raise ValueError('invalid hex color string "%s"' % s)
-    return tuple([int(n, 16)/255.0 for n in (s[1:3], s[3:5], s[5:7])])
-
-def bnw_to_hex(bnw):
-    '''
-    Converts '0' digit to correct '000000' pattern.
-    
-    Inputs:
-    bnw: A user created matrix containing '0' or '1' values for black or white.
+    def add_back(self, back_name, back_img):
+        """Adds a background image for sharing."""
+        self.dic_of_back_imgs[back_name] = back_img
+         
         
-    Outputs:
-    Returns the same matrix but in hex format.
-    '''
-    bnw=np.array(bnw)
-    rows = bnw.shape[0]
-    columns = bnw.shape[1]
-    hex_bnw=[[]]*rows
-    for i in range(rows):
-        hex_bnw[i]=[[]]*columns
-        for j in range(columns):
-            if bnw[i][j]=='0':
-                hex_bnw[i][j]='000000'
-            elif bnw[i][j]=='1':
-                hex_bnw[i][j]='FFFFFF'
-    return np.array(hex_bnw)
-            
-def rgb_to_gray(rgb):
-    '''
-    Helper function for making images grayscale in vidfill.
-  
-    Inputs:
-    rgb: An nxn matrix filled with RGB tuples.
-  
-    Outputs:
-    A nxn matrix with gray value tuples.
-    '''
-    if rgb.shape[0]*rgb.shape[1]>400:
-        print ("Image too large!! Shrinking...")
-        rgb = rgb[0:20,0:20]
-    rows = rgb.shape[0]
-    columns = rgb.shape[1]
-    gray=[[]]*rows
-    for i in range(rows):
-        gray[i]=[[]]*columns
-        for j in range(columns):
-            r,g,b= rgb[i][j][0], rgb[i][j][1], rgb[i][j][2]
-            gray[i][j]=0.2125 *r + 0.7154 *g + 0.0721 *b 
-    return gray
-
-def make_rgb(matrix): #helper function for vidfill
-    '''
-    Helper function used in vidfill to convert hex code to rgb.
-  
-    Inputs:
-    matrix: A nxn matrix filled with hex values.
-  
-    Outputs:
-    A nxn numpy array filled with rgb tuples.
-  
-    '''
-    matrix = np.array(matrix)
-    if len(matrix[0][0]) == 1:
-        matrix = bnw_to_hex(matrix)
-    if matrix.shape[0]*matrix.shape[1] > 400:
-        print ("Image too large!! Shrinking...")
-        matrix = matrix[0:20,0:20]
-    rows = matrix.shape[0]
-    columns = matrix.shape[1]
-    matrix2 = [[]]*rows
-    for i in range(rows):
-        matrix2[i] = [[]]*columns
-        for j in range(columns):
-            if len(matrix[i][j]) == 2:
-                t = matrix[i][j]+matrix[i][j]+matrix[i][j]
-                t = check_format(t)
-                color = hex_to_color('#'+t)
-                matrix2[i][j] = (color[0],color[1],color[2])
-            elif len(matrix[i][j]) == 1:
-                print ("Invalid length for matrix["+str(i)+"]["+str(j)+"]'s element, please use hexadecimal format.")
-            else:
-                t = matrix[i][j]
-                t = check_format(t)
-                color = hex_to_color('#'+t)
-                matrix2[i][j] = (color[0],color[1],color[2])    
-    return np.array(matrix2)
-    
-def im_show(matrix): #previously aolme_imshow
-    '''
-    A function that shows a single nxn matrix frame on the screen.
-  
-    Inputs:
-    matrix: A nxn matrix filled with hex values (without leading #) or 0's and 1's.
-  
-    Outputs:
-    A figure containing the designed image frame in color, grayscale or black and white.
-  
-    '''
-    check_input(matrix,'custom')
-    matrix = make_rgb(matrix)
-    if matrix.shape[0]*matrix.shape[1]>400:
-        print ("Image too large!! Shrinking...")
-        matrix = matrix[0:20,0:20] 
-    if (len(matrix[0][0])>1):
-        if not grid_lines:
-            pyplot.figure()
-            pyplot.tick_params(axis='both', which='both', bottom='off', top='off', labelbottom='off', right='off', left='off', labelleft='off')
-            pyplot.imshow(matrix, interpolation='none')
-            pyplot.tight_layout()
-        else:
-            fig,x =grid_lines_on(matrix.shape[0],matrix.shape[1])
-            pyplot.grid(linestyle='-', linewidth=0.5)
-            pyplot.imshow(matrix, interpolation='none')
-            pyplot.tight_layout()
-    else:
-        if not grid_lines:
-            pyplot.figure()
-            pyplot.tick_params(axis='both', which='both', bottom='off', top='off', labelbottom='off', right='off', left='off', labelleft='off')
-            pyplot.imshow(matrix, interpolation='none')
-            pyplot.tight_layout()
-        else:
-            grid_lines_on(matrix.shape[0],matrix.shape[1])
-            pyplot.grid(linestyle='-', linewidth=0.5)
-            pyplot.imshow(matrix, interpolation='none')
-            pyplot.tight_layout()
-    pyplot.show()
-
-def im_fill(matrix, rng_rows, rng_cols, val): #previously aolme_imfill
-    '''
-  A function that fills a range of rows and columns with a single color value.
-  
-  Inputs:
-  matrix: A nxn sized matrix. Can be empty or have been previously filled.
-  rng_rows: A range of rows input as [from,to].
-  rng_cols: A range of columns input as [from,to].
-  val: A hex color value or 0 or 1 which will fill the requested ranges of rows and columns.
-  
-  Outputs:
-  The same nxn matrix but with range of rows and columns filled with val.
-  
-  '''
-    check_input(matrix,'custom')
-    col_0 = [row[0] for row in matrix] # Getting column zero   
-    ncols = len(matrix[0])
-    nrows = len(col_0)
-
-    nrows_portion = rng_rows[1] - rng_rows[0] 
-    ncols_portion = rng_cols[1] - rng_cols[0] 
-
-    if (nrows_portion < 0) or (ncols_portion < 0):
-        print ('( getportion) Error: Wrong range declaration!');    
-        return None;
-
-    if (rng_rows[1] > nrows) or (rng_cols[1] > ncols):
-        print ('( getportion) Error: Index out of range!');    
-        return None;
-    
-    for i in range(rng_rows[0], rng_rows[1] + 1):
-        for j in range(rng_cols[0], rng_cols[1] + 1):
-            matrix[i][j] = val;
-
-    return matrix;   
-    
-def  im_print(matrix): #previously aolme_imprint
-    '''
-    A function that will print the contents of a matrix.
-  
-    Inputs:
-    matrix: A nxn matrix.
-  
-    Outputs:
-    Text printout of the entire matrix's contents.
-  
-    '''
-    check_input(matrix,'custom')
-    matrix = np.array(matrix)
-    print ("img = ",matrix    )       
-
-    return None;
-    
-def vid_show(vid,fps):    #previously aolme_vidshow
-    '''
-  A function that 'plays' a list of frame, creating a 2d video. Note, this must be set equal to some value to work!!!
-  
-  Inputs:
-  vid: A list of frames, set as [frame0,frame1,...,framen], where each frame is a nxn matrix of the same size.
-  fps: A number which represents the number of frames that should be played per second.
-  
-  Outputs:
-  A visual animation containing each frame in the order listed. Returns the animation.
-  
-  '''
-    #matrixf = make_rgb(vid[0])
-    matrixf=vid[0]
-    if not grid_lines:
-        fig = pyplot.figure(2)
-        pyplot.tick_params(axis='both', which='both', bottom='off', top='off', labelbottom='off', right='off', left='off', labelleft='off')
-    else:
-        fig1,ax = grid_lines_on(matrixf.shape[0],matrixf.shape[1])
-    fps = 1000./fps  
-    if len(vid) < 1:
-        print ("Incorrect input, make sure you give function a video to play!")
+    def add_obj(self, obj_name, obj_img, obj_roi):
+        """Adds an object image for sharing."""
+        obj = (obj_img, obj_roi)
+        self.dic_of_obj_imgs[obj_name] = obj 
         
-    if matrixf.shape[0]*matrixf.shape[1]>400:
-            print ("Image too large!! Shrinking...")
-            i = 0
-            for frame in vid:
-                frame = frame[0:20,0:20]
-                vid[i]=frame
-                i+=1
-    im = pyplot.imshow(matrixf, interpolation='none')
+    def add_obj_rot(self, obj_name, direction, rot_angle):
+        """Adds an object image for sharing."""
+        obj = (direction, rot_angle)
+        self.dic_of_obj_rot[obj_name] = obj 
         
-    # function to update figure
-    def update_fig(j):
-        # set the data in the axesimage object
-        #frame = make_rgb(vid[j])
-        frame=vid[j]
-        im.set_array(frame)
-        pyplot.draw()
-        return im,
-    # kick off the animation
-    if (grid_lines):
-        ani = animation.FuncAnimation(fig1, update_fig, frames=range(len(vid)), 
-                                interval=fps, blit=False, repeat=True)
-    else:
-        ani = animation.FuncAnimation(fig, update_fig, frames=range(len(vid)),
-                                interval = fps, blit=True, repeat=True)
-    pyplot.tight_layout()
-    pyplot.show()
-	
-    return ani
-	
-def save_vid(vid,fps,name):
-    if os.name != 'nt':
-        vid.save(name,fps = fps, writer='imagemagick')
+    #############################################    
+    def init_video(self, back_name, start_row, start_col):
+        
+        #Initialize the video to the background image given by back_name using the corresponding: background_image[start_row:start_row+num_of_rows-1, start_col:start_col+num_of_cols-1]."
+        # Create the first video frame using:
+        # 1. Store the name of the background image.
+        # 2. Extract the video frame from the background
+        #    at (start_row, start_col).
+        # 3. Use self.video.append() to initialize the video frame.
+        backgournd_frame = self.dic_of_back_imgs[back_name][start_row:start_row + self.num_of_rows, start_col:start_col+self.num_of_cols]
+        self.video.append(backgournd_frame)
+        #self.save_video()
+        #self.play_video()
+        return backgournd_frame
+      
+        
+      
+    def size(self):
+        """Returns the video size in a list containing:
+           [number_of_rows, number_of_columns]"""
+        video_size = [self.num_of_rows, self.num_of_cols]
+        print('number_of_rows = ', video_size[0], 'number_of_cols = ', video_size[1])
+        
+        return video_size
 
-def matrix_to_img(matrix): #previously me_matrix2img
-    '''
-    Takes a nxn image frame and converts it to jpg format, saves it and shows the image.
-  
-    Inputs:
-    matrix: A nxn matrix filled with hex colors.
-  
-    Outputs:
-    A .jpg file saved to disc as picture.jpg, and the image is also displayed on screen.
-    Returns the matrix as an opencv image.
-   
-    '''
-    check_input(matrix,'custom')
-    try: 
-        os.remove("picture.jpg")
-    except: 
-        pass
-    matrix = make_rgb(matrix)
-    pyplot.axis('off')
-    pyplot.imshow(matrix, interpolation='none')
-    pyplot.savefig('picture.jpg',format='jpg',bbox_inches='tight', pad_inches=0)
-    pyplot.show()
-    pyplot.axis('on')
-    c = cv2.imread('picture.jpg', 1)
-    c = cv2.resize(c, (600, 400)) 
-    #cv2.imshow('picture',c)
-    try: 
-        os.remove("picture.jpg")
-    except: 
-        pass
-
-    return c
     
-def make_img_gray(img):#previously me_rgb2gray
-    '''
-    Convert an open image to grayscale.
-  
-    Inputs:
-    img: An open image file.
-  
-    Outputs:
-    Returns the same image except converted to grayscale.
-  
-    '''
-    img = check_input(img,'cv')
-    
-    gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    show_img(gray_img)
-    return gray_img
-
-def show_img(img):#previously me_imshow
-    '''
-    Displays an open image on screen.
-  
-    Inputs:
-    img: An open image file.
-  
-    Outputs:
-    Displays the open image file on screen.
-    '''
-    check_input(img,'cv')
-    cv2.imshow('picture',img)
-    #this part looks ridiculous but it's a bug in cv2 with live interpreters.
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-    cv2.waitKey(0)
-    
-def read_img(img): #previously me_imread
-    '''
-    Reads an image from disc.
-  
-    Inputs:
-    img: A string containing the name of the image to be read on disc, with the file extension.
-  
-    Outputs:
-    Returns the read image as a numpy array.
-    
-    '''
-    c = cv2.imread(img,1)
-    return c    
-
-def save_img(img,name):#previously me_imsave
-    '''
-    Saves an open image from variable to disc.
-  
-    Inputs:
-    img: An open image file in a variable in numpy array format.
-    name: A string containing the name the image should be saved as, including the file extension.
-  
-    Outputs:
-    A saved image file on disc inside the same folder as the python script.
-  
-    '''
-    img = check_input(img,'save_list')
-    cv2.imwrite(name,img)
- 
-def get_pixel(img,loc): #previously me_impix
-    '''
-    Gets a single pixel from an open image.
-  
-    Inputs:
-    img: The image from which to get a pixel, stored as a numpy array in a variable.
-    loc: The x,y location of the desired pixel, input as [x,y]
-  
-    Outputs:
-    Returns the color of the pixel at the desired location as (r,g,b).
-   
-   '''
-    check_input(img,'cv')
-    
-    pixel = img[loc[0],loc[1]]
-	
-    return [pixel[2],pixel[1],pixel[0]]
-
-def img_size(img):#previously me_imsize
-    '''
-    Returns the size of the image.
-  
-    Inputs:
-    img: The image from which to get a pixel, stored as a numpy array in a variable.
-   
-    Outputs:
-    Returns the number of rows and columns in the array in (numberofrows, numberofcolums).
-   
-    '''
-    check_input(img,'cv')
-
-    print ('# of rows: ' + str(img.shape[1])) # of rows
-    print ('# of cols: ' + str(img.shape[0])) # of columns
-    size = (img.shape[1], img.shape[0]) # (nrows, ncols)
-    return size;
-    
-def show_comps(img): #previously me_showcomps
-    '''
-    Displays the red, blue, and green components of an image on screen.
-  
-    Inputs:
-    img: An image stored as a numpy array in a variable.
-  
-    Outputs:
-    Displays on screen the red, green and blue components of the given image. Returns nothing.
-  
-    '''
-    check_input(img,'cv')
-    #image = cv2.imread(img)
-    #zero = np.zeros(image.shape)
-
-    #zero = np.zeros((image.shape[0],image.shape[1],3), np.float64)
-    zeros = np.zeros((img.shape[0], img.shape[1]), np.uint8)
-    B,G,R = cv2.split(img)
-
-    blue_component = cv2.merge((B, zeros, zeros))
-    green_component = cv2.merge((zeros, G, zeros))
-    red_component = cv2.merge((zeros, zeros, R))
-            
-    cv2.imshow('blue',blue_component)
-    cv2.waitKey(0)
-    cv2.imshow('red',red_component)
-    cv2.waitKey(0)
-    cv2.imshow('green',green_component)
-    cv2.waitKey(0)
-    #more of this due to cv2 bug...maybe put in a loop to look 'nicer'
-    cv2.destroyWindow('green')
-    cv2.waitKey(-1)
-    cv2.destroyWindow('green')
-    cv2.waitKey(-1)
-    cv2.destroyWindow('green')
-    cv2.waitKey(-1)
-    cv2.destroyWindow('green')
-    cv2.waitKey(-1)    
-    return [red_component,green_component,blue_component]
-
-def get_comps(img):#previously me_getcomps
-    '''
-    Returns a list of the different combinations of rgb components of an image in a list.
-  
-    Inputs: 
-    img: An image stored as a numpy array in a variable.
-  
-    Outputs:
-    Returns a list of images stored as numpy arrays for each combination of components RGB.
-    Val[0] is an image of only red component.
-    Val[1] is an image of only green component.
-    Val[2] is an image of only blue component. 
-    Val[3] is an image of only green and red components creating yellow.
-    Val[4] is an image of only blue and green components creating cyan.
-    Val[5] is an image of only blue and red components creating magenta.
-  
-    '''
-    check_input(img,'cv')
-    #image = cv2.imread(img)
-    #zero = np.zeros(image.shape)
-
-    #zero = np.zeros((image.shape[0],image.shape[1],3), np.float64)
-    zeros = np.zeros((img.shape[0], img.shape[1]), np.uint8)
-    B,G,R = cv2.split(img)
-
-    Ir = cv2.merge((B, zeros, zeros))
-    Ig = cv2.merge((zeros, G, zeros))
-    Ib = cv2.merge((zeros, zeros, R))
-    Iy = cv2.merge((zeros, G, R))
-    Ic = cv2.merge((B, G, zeros))
-    Im = cv2.merge((B, zeros, R))
-    return (Ir, Ig, Ib, Iy, Ic, Im) # these are  RGB images
-    
-def rotate_img(img,degrees): #previously  me_imrotate
-    '''
-    Rotates an image.
-  
-    Inputs:
-    img: An image file stored in a variable as a numpy array.
-    degrees: The amount of degrees the image should be rotated by.
-
-    Outputs:
-    Displays the rotated image on screen.
-
-    '''
-    check_input(img,'cv')
-    (h, w) = img.shape[:2]
-    center = (w / 2, h / 2)
-            
-    M = cv2.getRotationMatrix2D(center, degrees, 1.0)
-    rotated = cv2.warpAffine(img, M, (w, h))
-    show_img(rotated)
-    return rotated
-    
-def crop_img(img,ranges):#previously me_imcrop
-    '''
-    Trims edges off of an image.
-  
-    Inputs:
-    img: An image file saved as a numpy array in a variable.
-    ranges: An array filled with pixel values saved as int.
-    ranges[0]: the x1 value from where to start cropping as part of (x1,y1) coordinates.
-    ranges[1]: the x2 value from where to end cropping as part of (x2,y2) coordinates.
-    ranges[2]: the y1 value from where to start the cropping as part of (x1,y1) coordinates.
-    ranges[3]: the y2 value from where to end the cropping as part of (x2,y2) coordinates.
-  
-    Outputs:
-    Displays the cropped image on screen.
-  
-    '''
-    check_input(img,'cv')
-    cropped = img[ranges[0]:ranges[1],ranges[2]:ranges[3]]
-    show_img(cropped)
-    return cropped
-
-def put_pixel(img, position, val):#previously me_putpixel
-    '''
-    Places a pixel on an image at a chosen location.
-   
-    Inputs:
-    img: An image file saved as a numpy array in a variable.
-    position: the position at which to place the pixel, given in (x,y) coordinates as position[0] for x and position [1] for y.
-    val: the rbg or black and white value or color of the pixel to be placed on the image, with val = 0 or 1 or val=[r,g,b] where r, g, and b are float values which define a color.
-  
-    Outputs:
-    No outputs, the pixel is saved on the original image and must be displayed using showimg(img).
-  
-    '''
-    check_input(img,'cv')
-    if len(img.shape) < 3: # grayscale
-        img[position[1],position[0]] = val
-    else: # RGB
-        img[position[1],position[0]] = (val[2], val[1], val[0])
-    return None
-
-def put_pixel_group(img, ranges, val): #previously me_putpixelgroup
-    '''
-    Places a group of pixels onto an image at a chosen location.
-   
-    Inputs:
-    img: An image file saved as a numpy array in a variable.
-    range: An array filled with pixel values saved as int.
-    range[0]: the x1 value from where to start paste as part of (x1,y1) coordinates.
-    range[1]: the x2 value from where to end paste as part of (x2,y2) coordinates.
-    range[2]: the y1 value from where to start the paste as part of (x1,y1) coordinates.
-    range[3]: the y2 value from where to end the paste as part of (x2,y2) coordinates.
-    val: the rbg or black and white value or color of the pixel to be placed on the image, with val = 0 or 1 or val=[r,g,b] where r, g, and b are float values which define a color.
-  
-    Outputs:
-    No outputs, the pixel range is saved on the original image and must be displayed using showimg(img).
-   
-    '''
-    check_input(img,'cv')
-    nra = ranges[0]
-    nrb = ranges[1]
-    nca = ranges[2]
-    ncb = ranges[3]
-    for i in range(nra, nrb+1):
-        for j in range(nca, ncb+1):
-            if len(img.shape) < 3: # grayscale
-                img[i,j] = val
-            else: # RGB
-                img[i,j] = (val[2], val[1], val[0])
-    return None
-    
-def print_img_info(img):
-    '''
-    Prints information about a user-created 2d image.
-  
-    Inputs:
-    img: A user created 2d matrix filled with color values.
-  
-    Outputs:
-    Prints on screen the number of pixes (rows*columns), image type (grayscale, color or black and white), height (number of rows), and width (number of columns)
-    '''	
-    #check_input(img,'cv')
-    if isinstance(img,list):
-      im_show(img)
-      img = np.array(img)
-    elif img.dtype != np.uint8:
-        im_show(img)
-    else:
-        show_img(img)
-    print ("Num of pixels: ", img.shape[0]*img.shape[1])
-    print ("Height: ", img.shape[1])
-    print ("Width: ", img.shape[0])
-    if len(img[0][0]) == 3:
-        print ("RGB color")
-    else:
-        print ("black and white")
-    
-    return None
-    
-def print_vid_info(vid):
-    '''
-    Prints information about a user created video.
-  
-    Inputs:
-    vid: A list of 2d matrices filled with color values, created by the user in format [frame0,frame1,frame2...]
-  
-    Outputs:
-    Prints the number of pixels on each frame (height*width), the height(number of rows), width (number of columns), number of frames, and whether the video is color, graysale or black and white.
-    '''
-    for i in range(len(vid)):
-        vid[i] = np.array(vid[i])
-    print ("Num of pixels: ", vid[0].shape[0]*vid[0].shape[1])
-    print ("Height: ", vid[0].shape[1])
-    print ("Width: ", vid[0].shape[0])
-    print ("Num of frames: ", len(vid))
-    if len(vid[0][0][0]) == 3:
-        print ("RGB color")
-    else:
-        print ("black and white")
-    return None
-
-def print_img_segment(img,ranges):
-    '''
-    Prints a portion of a user created image.
-  
-    Inputs:
-    img: A user defined 2d matrix filled with color values.
-    ranges: A list of ranges which define the portion of the matrix to be printed, defined as a list of numbers with [x1,x2,y1,y2] coordinates.
-  
-    Outputs:
-    Displays an image on screen containing only the portion of the original image requested by the user.
-  
-    '''
-    check_input(img,'custom')
-    img = np.array(img)
-    im_seg = img[ranges[0]:ranges[1],ranges[2]:ranges[3]]
-    im_show(im_seg)
-    return None
-    
-def print_vid_segment(vid,ranges,frames,fps):
-    '''
-    Prints a portion of a user created video.
-  
-    Inputs:
-    vid: A list of 2d matrices filled with color values, created by the user in format [frame0,frame1,frame2...]
-    ranges: A list of ranges which define the portion of the matrix to be printed, defined as a list of numbers with [x1,x2,y1,y2] coordinates.
-    frames: A range of frames to play on the video, must be continuous, input as [startframe,endframe]...need to add all as an option.
-    fps: The rate at which the video should be played.
-  
-    Outputs:
-    Displays an image on screen containing only the portion of the original image requested by the user.
-  
-    '''
-    if len(vid) < 2:
-        print ("Please pass a video to the function.")
-    vid_seg=[]
-    for vids in vid:
-        vids = np.array(vids)
-        vid_seg.append(vids[ranges[0]:ranges[1],ranges[2]:ranges[3]])
-    vid_seg = vid_seg[frames[0]:frames[1]]
-    return vid_show(vid_seg,fps)
+##########################################################33
+    def new_frame(self, start_row, start_col):
+        #"""Generates a single frame by extracting a portion of the background image."""
+        # Same as init_video() but does not change the 
+        # background image.
+        
+       #back_image = self.dic_of_back_imgs[back_name][start_row:start_row + self.num_of_rows, start_col:start_col+self.num_of_cols]
+        back_image = self.video[0]
+        self.video.append(back_image)
+        
+        return back_image
+        
+    def set_unfit_img(self, obj_name, start_row, start_col, start_row_new, end_row_new, start_col_new, end_col_new, clip_start_row, clip_end_row, clip_start_col, clip_end_col):
+       # Set the new coordinates for unfit objects
                 
+       if start_row >= self.num_of_rows or start_col >= self.num_of_cols:
+           print('Error: Object does not fit background.')
+           
+                
+       if start_row < 0:
+           clip_start_row = 0 - start_row
+           start_row_new = 0
+                
+                      
+       if start_row + self.dic_of_obj_imgs[obj_name][1].shape[0] >= self.num_of_rows and start_row < self.num_of_rows:
+           clip_end_row = self.num_of_rows - start_row - 1 
+           end_row_new = self.num_of_rows - 1
+                
+            
+       if start_col < 0:
+           clip_start_col = 0 - start_col
+           start_col_new = 0
+                
+                
+       if start_col + self.dic_of_obj_imgs[obj_name][1].shape[1] >= self.num_of_cols and start_col < self.num_of_cols:
+           clip_end_col = self.num_of_cols - start_col - 1 
+           end_col_new = self.num_of_cols - 1 
+        
+       return (start_row_new, end_row_new, start_col_new, end_col_new, 
+                    clip_start_row, clip_end_row, clip_start_col, clip_end_col)
+        
+        
+        
+        
+    def place_obj(self, obj_name, start_row, start_col):
+        #print('place_obj:::obj_name = ', obj_name)
+        self.obj_locs[obj_name]= [start_row, start_col]
+        """Place image in the current video frame."""
+        roi_obj_mask = self.dic_of_obj_imgs[obj_name][1]
+        obj_img = self.dic_of_obj_imgs[obj_name][0]
+        
+        
+        roi_obj = np.ones((roi_obj_mask.shape[0], roi_obj_mask.shape[1],3))
+        roi_obj[:,:,0] = np.copy(roi_obj_mask * obj_img[:,:,0])
+        roi_obj[:,:,1] = np.copy(roi_obj_mask * obj_img[:,:,1])
+        roi_obj[:,:,2] = np.copy(roi_obj_mask * obj_img[:,:,2])
+        
+        mask_1 = np.ones((roi_obj_mask.shape[0], roi_obj_mask.shape[1]))
+        roi_obj_mask_rev = mask_1 - roi_obj_mask
+        
+        
+        
+        
+        #roi_obj = roi_obj_mask *
+        if len(self.video) == 0:
+            print('Warning: No frame.')
+            
+        else:
+            back_obj_image = np.copy(self.video[-1])
+        
+        
+            start_row_new = start_row
+            end_row_new = start_row + roi_obj_mask.shape[0]
+            start_col_new = start_col
+            end_col_new = start_col + roi_obj_mask.shape[1]
+       
+        
+            clip_start_row = 0
+            clip_end_row = roi_obj_mask.shape[0]
+            clip_start_col = 0
+            clip_end_col = roi_obj_mask.shape[1]
+        
+            if start_row < 0 or start_col < 0 or (start_row + roi_obj_mask.shape[0]) >= self.num_of_rows or (start_col + roi_obj_mask.shape[1]) >= self.num_of_cols:
+                #print('Warning: Object does not fit background.')
+                (start_row_new, end_row_new, start_col_new, end_col_new,
+             clip_start_row, clip_end_row, clip_start_col, clip_end_col)=self.set_unfit_img(obj_name, start_row, start_col, start_row_new, end_row_new, start_col_new, end_col_new, clip_start_row, clip_end_row, clip_start_col, clip_end_col)
+                
+            
+            
+                clip_obj_mask_rev = np.copy(roi_obj_mask_rev[clip_start_row:clip_end_row, clip_start_col: clip_end_col])
+                clip_obj_mask = np.copy(roi_obj_mask[clip_start_row:clip_end_row, clip_start_col: clip_end_col])
+                
+                roi_back_clip = np.copy(np.ones((clip_obj_mask_rev.shape[0], clip_obj_mask_rev.shape[1],3)))
+                roi_obj_clip = np.copy(obj_img[clip_start_row:clip_end_row, clip_start_col: clip_end_col])
+                
+                roi_back_clip [:,:,0] =np.copy( back_obj_image[start_row_new:end_row_new, start_col_new:end_col_new][:,:,0] * clip_obj_mask_rev)
+                roi_back_clip [:,:,1] =np.copy( back_obj_image[start_row_new:end_row_new, start_col_new:end_col_new][:,:,1] * clip_obj_mask_rev)
+                roi_back_clip [:,:,2] =np.copy( back_obj_image[start_row_new:end_row_new, start_col_new:end_col_new][:,:,2] * clip_obj_mask_rev)
+                
+                roi_obj_clip [:,:,0] = np.copy(roi_obj_clip[:,:,0] * clip_obj_mask)
+                roi_obj_clip [:,:,1] = np.copy(roi_obj_clip[:,:,1] * clip_obj_mask)
+                roi_obj_clip [:,:,2] = np.copy(roi_obj_clip[:,:,2] * clip_obj_mask)
+               
+                back_obj_image[start_row_new:end_row_new, start_col_new:end_col_new] = np.copy(roi_back_clip  + roi_obj_clip)
+                #self.obj_locs[obj_name]= [start_row_new, start_col_new]
+              
+                
+            else:  ##MASK *, FRAME +
+                
+                roi_back = np.ones((roi_obj.shape[0], roi_obj.shape[1],3))
+                
+                roi_back[:,:,0] = np.copy(back_obj_image[start_row:(start_row + roi_obj_mask.shape[0]), start_col:(start_col +roi_obj_mask.shape[1])][:,:,0] * roi_obj_mask_rev)
+                roi_back[:,:,1] = np.copy(back_obj_image[start_row:(start_row + roi_obj_mask.shape[0]), start_col:(start_col +roi_obj_mask.shape[1])][:,:,1] * roi_obj_mask_rev)
+                roi_back[:,:,2] = np.copy(back_obj_image[start_row:(start_row + roi_obj_mask.shape[0]), start_col:(start_col +roi_obj_mask.shape[1])][:,:,2] * roi_obj_mask_rev)
+                back_obj_image[start_row:(start_row + roi_obj_mask.shape[0]), start_col:(start_col +roi_obj_mask.shape[1])] = np.copy(roi_back + roi_obj)
+               
+        
+        # 1. Retrieve the last video frame else print a warning.
+        # 2. Write the code to multiply the roi by the object img and place it 
+        #    against the bakcground. You need to check if the image fits
+        #    inside the background. If it does not fit, you must clip the object
+        #    and save the part of the image that fits.
+        # 3. Save the object location into a dictionary for the current video.
+                #self.obj_locs[obj_name]= [start_row, start_col]
+        # 4. Update the last video frame. 
+            self.video[-1] = back_obj_image
+            #self.save_video()
+            #self.play_video()
+    
+            return back_obj_image
+       
+         
+    def move_up(self, obj_name, row_motion):
+        
+        (start_row, start_col) = self.obj_locs[obj_name]                 
+        return (start_row - row_motion, start_col)
+    
+    def move_down(self, obj_name, row_motion):
+        
+        (start_row, start_col) = self.obj_locs[obj_name]                 
+        return (start_row + row_motion, start_col)
+    
+    def move_left(self, obj_name, col_motion):
+        
+        (start_row, start_col) = self.obj_locs[obj_name]                 
+        return (start_row, start_col - col_motion)
+    
+    def move_right(self, obj_name, col_motion):
+        
+        (start_row, start_col) = self.obj_locs[obj_name]                 
+        return (start_row, start_col + col_motion)
+        
+    
+    def fw(self, time):
+        obj_name =list(self.dic_of_obj_imgs.items())[-1][0]
+        #print('obj_name = ', obj_name)
+        for i in range (1, int(time * self.frame_ps)):
+            
+            self.new_frame(0, 0) 
+            (start_row, start_col) = self.obj_locs[obj_name]
+        
+        
+        
+            direction = self.dic_of_obj_rot[obj_name][0]
+            angle = self.dic_of_obj_rot[obj_name][1]
+        
+            if direction == 'r':
+                if (abs(angle)//180) % 2 == 0:
+                    new_direction = 'r'
+                    new_angle = abs(angle) % 180
+                else:
+                    new_direction = 'l'
+                    new_angle = 180 - abs(angle) % 180
+                
+            if direction == 'l':
+                if (abs(angle)//180) % 2 == 0:
+                    new_direction = 'l'
+                    new_angle = abs(angle) % 180
+                else:
+                    new_direction = 'r'
+                    new_angle = 180 - abs(angle) % 180
+       
+            #print ('new_direction= ',new_direction)
+            #print ('new_ang = ', new_angle)
+        
+            if new_direction == 'r':
+                if new_angle >= 0 and new_angle <= 90:
+                    up_dis = int(self.px_frame) * math.cos(new_angle/180*math.pi)
+                    right_dis = int(self.px_frame) * math.sin(new_angle/180*math.pi)
+               
+                    (start_row_1, start_col_1) =  self.move_up(obj_name, up_dis)
+                    (start_row_2, start_col_2) = self.move_right(obj_name, right_dis)
+               
+                else:
+                    down_dis = -1 * int(self.px_frame) * math.cos(new_angle/180*math.pi)
+                    right_dis = int(self.px_frame) * math.sin(new_angle/180*math.pi)
+                    (start_row_1, start_col_1) = self.move_down(obj_name, down_dis)
+                    (start_row_2, start_col_2) =self.move_right(obj_name, right_dis)
+                
+            if new_direction == 'l':
+                if new_angle >= 0 and new_angle <= 90:
+                    up_dis = int(self.px_frame) * math.cos(new_angle/180*math.pi)
+                    left_dis = int(self.px_frame) * math.sin(new_angle/180*math.pi)
+                    (start_row_1, start_col_1) = self.move_up(obj_name, up_dis)
+                    (start_row_2, start_col_2) =self.move_left(obj_name, left_dis)
+                else:
+                    down_dis = -1 * int(self.px_frame) * math.cos(new_angle/180*math.pi)
+                    left_dis = int(self.px_frame) * math.sin(new_angle/180*math.pi)
+                    (start_row_1, start_col_1) = self.move_down(obj_name, down_dis)
+                    (start_row_2, start_col_2) =self.move_left(obj_name, left_dis)
+                
+            new_row = int(start_row_1)
+            new_col = int(start_col_2)
+        
+            self.place_obj(obj_name, new_row, new_col)
+            #self.save_video()
+            #self.play_video()  
+            #cv2.imshow('second frame', frame)
+            #cv2.waitKey(10)               
+        #return (frame, new_row, new_col)
+    
+        
+        
+        
+        return (new_row, new_col)
+    
+    def bw(self, time):
+        obj_name =list(self.dic_of_obj_imgs.items())[-1][0]
+        #print('obj_name = ', obj_name)
+        for i in range (1, int(time * self.frame_ps)):
+            
+            self.new_frame(0, 0) 
+            (start_row, start_col) = self.obj_locs[obj_name]
+        
+        
+        
+            direction = self.dic_of_obj_rot[obj_name][0]
+            angle = self.dic_of_obj_rot[obj_name][1]
+        
+            if direction == 'r':
+                if (abs(angle)//180) % 2 == 0:
+                    new_direction = 'r'
+                    new_angle = abs(angle) % 180
+                else:
+                    new_direction = 'l'
+                    new_angle = 180 - abs(angle) % 180
+                
+            if direction == 'l':
+                if (abs(angle)//180) % 2 == 0:
+                    new_direction = 'l'
+                    new_angle = abs(angle) % 180
+                else:
+                    new_direction = 'r'
+                    new_angle = 180 - abs(angle) % 180
+       
+            #print ('new_direction= ',new_direction)
+            #print ('new_ang = ', new_angle)
+        
+            if new_direction == 'r':
+                if new_angle >= 0 and new_angle <= 90:
+                    down_dis = int(self.px_frame) * math.cos(new_angle/180*math.pi)
+                    left_dis = int(self.px_frame) * math.sin(new_angle/180*math.pi)
+               
+                    (start_row_1, start_col_1) =  self.move_down(obj_name, down_dis)
+                    (start_row_2, start_col_2) = self.move_left(obj_name, left_dis)
+               
+                else:
+                    up_dis = -1 * int(self.px_frame) * math.cos(new_angle/180*math.pi)
+                    left_dis = int(self.px_frame) * math.sin(new_angle/180*math.pi)
+                    (start_row_1, start_col_1) = self.move_up(obj_name, up_dis)
+                    (start_row_2, start_col_2) =self.move_left(obj_name, left_dis)
+                
+            if new_direction == 'l':
+                if new_angle >= 0 and new_angle <= 90:
+                    down_dis = int(self.px_frame) * math.cos(new_angle/180*math.pi)
+                    right_dis = int(self.px_frame) * math.sin(new_angle/180*math.pi)
+                    (start_row_1, start_col_1) = self.move_down(obj_name, down_dis)
+                    (start_row_2, start_col_2) =self.move_right(obj_name, right_dis)
+                else:
+                    up_dis = -1 * int(self.px_frame) * math.cos(new_angle/180*math.pi)
+                    right_dis = int(self.px_frame) * math.sin(new_angle/180*math.pi)
+                    (start_row_1, start_col_1) = self.move_up(obj_name, up_dis)
+                    (start_row_2, start_col_2) =self.move_right(obj_name, right_dis)
+                
+            new_row = int(start_row_1)
+            new_col = int(start_col_2)
+        
+            self.place_obj(obj_name, new_row, new_col)
+            #self.save_video()
+            #self.play_video()  
+            #cv2.imshow('second frame', frame)
+            #cv2.waitKey(10)               
+        return (new_row, new_col)
+                
+                
+                
+        
+    
+    
+    
+    
+   
+    def rt(self, rot_angle):
+        obj_name =list(self.dic_of_obj_imgs.items())[-1][0]
+        
+        (start_row, start_col) = self.obj_locs[obj_name]
+       
+        if self.dic_of_obj_rot[obj_name][0] == 'r':
+            new_angle = abs(self.dic_of_obj_rot[obj_name][1]) + rot_angle
+        if self.dic_of_obj_rot[obj_name][0] == 'l':
+            new_angle = -abs(self.dic_of_obj_rot[obj_name][1]) + rot_angle
+       
+        
+        if new_angle >= 0:
+            direction = 'r'
+            
+        if new_angle < 0:
+            direction = 'l'
+        
+            
+        rot_obj_name = obj_name + '_' + direction + '_' + str(abs(new_angle))
+      
+        self.add_obj_rot(rot_obj_name, direction, abs(new_angle))
+        
+        
+        roi_obj_mask = np.copy(self.dic_of_obj_imgs[obj_name][1])
+        obj_img = np.copy(self.dic_of_obj_imgs[obj_name][0])
+        
+       
+        M = cv2.getRotationMatrix2D(((obj_img.shape[1])/2,(obj_img.shape[0])/2), -1*rot_angle,1)
+        cos = np.abs(M[0, 0])
+        sin = np.abs(M[0, 1])
+        
+       
+        nW = int((roi_obj_mask.shape[0] * sin) + (roi_obj_mask.shape[1] * cos))
+        nH = int((roi_obj_mask.shape[0] * cos) + (roi_obj_mask.shape[1] * sin))
+        
+        M[0, 2] += (nW / 2) - (obj_img.shape[1])/2
+        M[1, 2] += (nH / 2) - (obj_img.shape[0])/2
+        obj_rot = np.copy(cv2.warpAffine(obj_img, M,(nW, nH)))
+        
+        obj_rot_mask = np.copy(cv2.warpAffine(roi_obj_mask.astype(float), M,(nW, nH)))
+        
+        self.add_obj(rot_obj_name, obj_rot, obj_rot_mask)
+        self.obj_locs[rot_obj_name]= [start_row, start_col]
+        self.place_obj(rot_obj_name, start_row, start_col)
+        
+    
+       # print('dir = ', direction)
+        #print('new_angle = ', rot_angle)
+        return rot_obj_name
+    
+    
+    
+    def lt(self, rot_angle):
+        
+        obj_name =list(self.dic_of_obj_imgs.items())[-1][0]
+        (start_row, start_col) = self.obj_locs[obj_name]
+        
+        if self.dic_of_obj_rot[obj_name][0] == 'r':
+            new_angle = abs(self.dic_of_obj_rot[obj_name][1]) - rot_angle
+        if self.dic_of_obj_rot[obj_name][0] == 'l':
+            new_angle = -abs(self.dic_of_obj_rot[obj_name][1]) - rot_angle
+       
+       
+        if new_angle >= 0:
+            direction = 'r'
+            
+        if new_angle < 0:
+            direction = 'l'
+        
+            
+        rot_obj_name = obj_name + '_' + direction + '_' + str(abs(new_angle))
+        
+        #print('dir = ', direction)
+        #print('new_angle = ', abs(new_angle))
+        
+        self.add_obj_rot(rot_obj_name, direction, abs(new_angle))
+        
+        
+        
+        roi_obj_mask = np.copy(self.dic_of_obj_imgs[obj_name][1])
+        obj_img = np.copy(self.dic_of_obj_imgs[obj_name][0])
+        
+       
+        M = cv2.getRotationMatrix2D(((obj_img.shape[1])/2,(obj_img.shape[0])/2), rot_angle,1)
+        cos = np.abs(M[0, 0])
+        sin = np.abs(M[0, 1])
+        #print ('cos = ', cos)
+        #print ('sin = ', sin)
+       
+        nW = int((roi_obj_mask.shape[0] * sin) + (roi_obj_mask.shape[1] * cos))
+        nH = int((roi_obj_mask.shape[0] * cos) + (roi_obj_mask.shape[1] * sin))
+        
+        #print('nW = ', nH, 'nH = ',nH)
+        M[0, 2] += (nW / 2) - (obj_img.shape[1])/2
+        M[1, 2] += (nH / 2) - (obj_img.shape[0])/2
+        
+        #print('M = ', M)
+        obj_rot = np.copy(cv2.warpAffine(obj_img, M,(nW, nH)))
+        
+        obj_rot_mask = np.copy(cv2.warpAffine(roi_obj_mask.astype(float), M,(nW, nH)))
+        
+        self.add_obj(rot_obj_name, obj_rot, obj_rot_mask)
+        self.obj_locs[rot_obj_name]= [start_row, start_col]
+        self.place_obj(rot_obj_name, start_row, start_col)
+        #print('lt::obj_name = ', obj_name)
+        return rot_obj_name
+        
+        
+        
+      
+    def scale_obj(self, obj_name, row_center, col_center, scale_factor):
+        """Place image at (row_center, col_center) enlarged by scale_factor."""
+        
+        roi_obj_mask = np.copy(self.dic_of_obj_imgs[obj_name][1])
+       
+        obj_img = np.copy(self.dic_of_obj_imgs[obj_name][0])
+        
+       
+        res = cv2.resize(obj_img, (int(scale_factor* obj_img.shape[1]), int(scale_factor* obj_img.shape[0])))
+        res_roi_mask = cv2.resize(roi_obj_mask.astype(float), (int(scale_factor* roi_obj_mask.shape[1]), int(scale_factor* roi_obj_mask.shape[0])))
+       # (start_row, start_col) = self.obj_locs[obj_name]
+        
+    
+        return (res, res_roi_mask)
+    
+    
+    def take_pic(self, img):
+
+        ori_filename = 'pics\\frame_'+str(self.num_img)+'.jpg'
+        
+        cv2.imwrite(ori_filename , img)
+        
+        self.num_img = self.num_img + 1
+        return ori_filename
+
+    def check_attach(self, fileToSend):
+        ctype, encoding = mimetypes.guess_type(fileToSend)
+        if ctype is None or encoding is not None:
+            ctype = "application/octet-stream"
+
+        maintype, subtype = ctype.split("/", 1)
+
+        
+        fp = open(fileToSend, "rb")
+        attachment = MIMEImage(fp.read(), _subtype=subtype)
+        fp.close()
+        
+            
+        return attachment
+        
+    def send_mail(self, img_filename):
+    
+        emailfrom = "aolmegopigo3@gmail.com"
+
+        #emailto = ["wshi@unm.edu", "pattichis@gmail.com", "luis2arm@gmail.com"]
+        emailto = ["almadiaz333@gmail.com"]
+        
+        fileToSend = img_filename
+        #fileToSend = "aolme.py"
+        username = "aolmegopigo3"
+        password = "robots1234"
+        body = "Hi, this is your python mission!"
+    
+    
+        msg = MIMEMultipart()
+        msg["From"] = emailfrom
+        msg["To"] = ", ".join(emailto)
+        msg["Subject"] = "Message from GoPiGo_dex"
+        #msg.preamble = "Wa hahaha"
+        msg.attach(MIMEText(body, 'plain'))
+
+        attachment = self.check_attach(fileToSend)
+        attachment.add_header("Content-Disposition", "attachment", filename=fileToSend)
+        
+        msg.attach(attachment)
+        
+        server = smtplib.SMTP("smtp.gmail.com", 587)
+        server.starttls()
+        server.login(username,password)
+        server.sendmail(emailfrom, emailto, msg.as_string())
+        server.quit()
+        return
+
+    def play_video(self):
+        """Plays the video on the screen."""
+        print('Playing video')
+        #frame_num = 0
+        for i in range (0, len(self.video)):
+            #frame_num = frame_num + 1
+            
+            cv2.imshow(self.video_name, self.video[i])
+            cv2.waitKey(1)
+            
+            if cv2.waitKey(1) & 0xFF == ord("a"):
+                print('Taking picture')
+                self.take_pic(self.video[i])
+                
+            if cv2.waitKey(1) & 0xFF == ord("e"):
+                print('Taking picture and emailing')
+                (img_filename) = self.take_pic(self.video[i])
+                self.send_mail(img_filename)
+                
+            # if the `q` key was pressed, break from the loop
+            if cv2.waitKey(1) & 0xFF == ord("q"):
+                print('Quit')
+                break
+            
+        
+    def save_video(self):
+        """Saves the video to a file."""
+        for i in range (0, len(self.video)):
+            self.out.write(self.video[i])
+        
+    def beep(self, fq, t):
+        winsound.Beep(fq, t)
+        time.sleep(0.5)
+    
+
+        
+    def beep1(self):
+        Freq = 2500 # Set Frequency To 2500 Hertz
+        Dur = 1000 # Set Duration To 1000 ms == 1 second
+        self.beep(Freq,Dur)
+        
+    def beep2(self):
+        Freq_1 = 500 # Set Frequency To 2500 Hertz
+        Freq_2 = 1000 # Set Frequency To 2500 Hertz
+        Dur = 1000 # Set Duration To 1000 ms == 1 second
+        self.beep(Freq_1,Dur)
+        self.beep(Freq_2,Dur)
+        
+    def beep3(self):
+        Freq_1 = 500 # Set Frequency To 2500 Hertz
+        Freq_2 = 1200 # Set Frequency To 2500 Hertz
+        Freq_3 = 1500 # Set Frequency To 2500 Hertz
+        Freq_4 = 1700 # Set Frequency To 2500 Hertz
+        Dur = 1000 # Set Duration To 1000 ms == 1 second
+        self.beep(Freq_1,Dur)
+        self.beep(Freq_2,Dur)
+        self.beep(Freq_3,Dur)
+        self.beep(Freq_4,Dur)
+        
+    def beepLong(self):
+        soo = 247
+        do = 330 
+        re = 370 
+        mi = 415
+        fa = 440 
+        so = 494 
+        la = 554
+        ti = 622
+        
+        Dur = 250
+        
+        self.beep(mi,Dur)
+        self.beep(mi,Dur)
+        self.beep(fa,Dur)
+        self.beep(so,Dur)
+        self.beep(so,Dur)
+        self.beep(fa,Dur)
+        self.beep(mi,Dur)
+        self.beep(re,Dur)
+        self.beep(do,Dur)
+        self.beep(do,Dur)
+        self.beep(re,Dur)
+        self.beep(mi,Dur)
+        self.beep(mi,Dur)
+        self.beep(re,Dur)
+        self.beep(re,Dur)
+        
+        self.beep(mi,Dur)
+        self.beep(mi,Dur)
+        self.beep(fa,Dur)
+        self.beep(so,Dur)
+        self.beep(so,Dur)
+        self.beep(fa,Dur)
+        self.beep(mi,Dur)
+        self.beep(re,Dur)
+        self.beep(do,Dur)
+        self.beep(do,Dur)
+        self.beep(re,Dur)
+        self.beep(mi,Dur)
+        self.beep(re,Dur)
+        self.beep(do,Dur)
+        self.beep(do,Dur)
+        
+        self.beep(re,Dur)
+        self.beep(re,Dur)
+        self.beep(mi,Dur)
+        self.beep(do,Dur)
+        self.beep(re,Dur)
+        self.beep(mi,Dur)
+        self.beep(fa,Dur)
+        self.beep(mi,Dur)
+        self.beep(do,Dur)
+        self.beep(re,Dur)
+        self.beep(mi,Dur)
+        self.beep(fa,Dur)
+        self.beep(mi,Dur)
+        self.beep(re,Dur)
+        self.beep(do,Dur)
+        self.beep(re,Dur)
+        self.beep(soo,Dur)
+        self.beep(soo,Dur)
+        
+        self.beep(mi,Dur)
+        self.beep(mi,Dur)
+        self.beep(fa,Dur)
+        self.beep(so,Dur)
+        self.beep(so,Dur)
+        self.beep(fa,Dur)
+        self.beep(mi,Dur)
+        self.beep(re,Dur)
+        self.beep(do,Dur)
+        self.beep(do,Dur)
+        self.beep(re,Dur)
+        self.beep(mi,Dur)
+        self.beep(re,Dur)
+        self.beep(do,Dur)
+        self.beep(do,Dur)
+        
+        
+        
+        
+    
