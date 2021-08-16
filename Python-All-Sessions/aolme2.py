@@ -976,7 +976,8 @@ class vid:
         flowerCol=place_col-cleft
         fupperCol=place_col+cright
         
-        objFrame[flowerRow:fupperRow,flowerCol:fupperCol,:] = objSel[objaxis2[0]:objaxis2[2],objaxis2[1]:objaxis2[3],:]
+        
+        objFrame[flowerRow:fupperRow,flowerCol:fupperCol,:] = objSel[(objaxis2[0]):(objaxis2[2]),objaxis2[1]:objaxis2[3],:]
         
         # 5. Prepare inverted mask (same size as video)       
         maskFrame= np.zeros((self.num_of_rows,self.num_of_cols,3),  dtype=np.uint8)
@@ -1307,7 +1308,10 @@ class vid:
         
         resX1  = round(a * (px1 - xInit) + b*(py1 - yInit) + xInit);
         # resY1  = round(b * (px1 - xInit) - a*(py1 - yInit) + yInit);
-        
+        if resX1<0:
+            resX1=0
+        if resX0<0:
+            resX0=0
         
         objaxisFlipHor[1] = min([resX0,resX1])
         objaxisFlipHor[3] = max([resX0,resX1])
@@ -1374,11 +1378,17 @@ class vid:
         resY1  = round(b * (px1 - xInit) - a*(py1 - yInit) + yInit);
         
         
+        if resY1<0:
+            resY1=0
+        if resY0<0:
+            resY0=0
+        
         objaxisFlipVer[0] = min([resY0,resY1])
         objaxisFlipVer[2] = max([resY0,resY1])
         
         objaxisFlipVer[1] = objaxis[1]
         objaxisFlipVer[3] = objaxis[3]
+        
         
         # 2. Call place object function (.place_obj())
         newCoord = self.place_obj(objfullFlipVer, objroiFlipVer, objaxisFlipVer, place_row, place_col)
