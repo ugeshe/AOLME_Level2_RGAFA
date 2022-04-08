@@ -135,6 +135,7 @@ class threshold:
             plt.plot(histr,color = col)
             plt.axvline(x=rgb_values[n], label='low')
             plt.axvline(x=rgb_values[n+1],label=str(rgb_values[n+1]))
+            plt.legend()
             plt.xlabel('Pixel values', fontsize=18)
             plt.ylabel('Number of occurrences',fontsize=12)
             plt.title(color[i], fontsize = 18)
