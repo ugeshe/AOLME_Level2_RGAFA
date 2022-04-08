@@ -130,7 +130,7 @@ class threshold:
         color = ('Blue','Green','Red')
         n = 0
         for i,col in enumerate(color):
-            histr = cv2.calcHist([self.color_img],[i],None,[256],[0,256])
+            histr = cv2.calcHist([self.color_img],[i],[10],[256],[0,256])
             #plt.figure(color[i])
             plt.plot(histr,color = col)
             plt.axvline(x=rgb_values[n], linestyle = '--', color = 'c', label=str(rgb_values[n]))
