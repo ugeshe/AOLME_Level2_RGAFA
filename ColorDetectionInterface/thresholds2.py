@@ -1,9 +1,18 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Wed Nov 11 22:06:28 2020
+Created on Fri Apr  8 12:21:46 2022
 
-@author: wshi
+@author: sherry
 """
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Apr  8 12:16:56 2022
+
+@author: sherry
+"""
+
 
 import matplotlib
 import matplotlib.pyplot as plt 
@@ -70,7 +79,7 @@ class threshold:
             plt.xlabel('Pixel values')
             plt.ylabel('Number of occurrences')
             plt.title(color[i])
-            plt.xlim([0,256])
+            plt.xlim([0,300])
             plt.title(col)
         plt.show()
         
@@ -83,7 +92,7 @@ class threshold:
             plt.xlabel('Pixel values')
             plt.ylabel('Number of occurrences')
             plt.title(color[i])
-            plt.xlim([0,256])
+            plt.xlim([0,300])
             plt.title(col)
             plt.savefig(col+'.png')
         
@@ -112,7 +121,7 @@ class threshold:
             plt.xlabel('Pixel values')
             plt.ylabel('Number of occurrences')
             plt.title(color[i])
-            plt.xlim([0,256])
+            plt.xlim([0,300])
             plt.title(col)
         plt.show()
         
@@ -129,7 +138,7 @@ class threshold:
             plt.xlabel('Pixel values', fontsize=18)
             plt.ylabel('Number of occurrences',fontsize=12)
             plt.title(color[i], fontsize = 18)
-            plt.xlim([0,256])
+            plt.xlim([0,300])
             plt.title(col)
             plt.savefig(col+'.png')
             n=n+2
@@ -153,7 +162,7 @@ class threshold:
         histr = cv2.calcHist([self.color_img],[self.index],None,[256],[0,256])
         plt.figure()
         plt.plot(histr,color = self.colors[self.index])
-        plt.xlim([0,256])
+        plt.xlim([0,300])
         plt.title(plot_name)
         
         ymax = self.color_img.shape[0] * self.color_img.shape[1] 
