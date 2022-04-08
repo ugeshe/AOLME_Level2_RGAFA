@@ -132,19 +132,17 @@ class threshold:
         for i,col in enumerate(color):
             histr = cv2.calcHist([self.color_img],[i],None,[256],[0,256])
             #plt.figure(color[i])
-# =============================================================================
-#             plt.plot(histr,color = col)
-#             plt.axvline(x=rgb_values[n])
-#             plt.axvline(x=rgb_values[n+1])
-#             plt.xlabel('Pixel valueshjkhkhk', fontsize=18)
-#             plt.ylabel('Number of occurrences',fontsize=12)
-#             plt.title(color[i], fontsize = 18)
-#             plt.xlim([0,300])
-#             plt.title(col)
-#             plt.savefig(col+'.png')
-#             n=n+2
-#             plt.clf()
-# =============================================================================
+            plt.plot(histr,color = col)
+            plt.axvline(x=rgb_values[n], label=str(rgb_values[n]))
+            plt.axvline(x=rgb_values[n+1],label=str(rgb_values[n+1]))
+            plt.xlabel('Pixel values', fontsize=18)
+            plt.ylabel('Number of occurrences',fontsize=12)
+            plt.title(color[i], fontsize = 18)
+            plt.xlim([0,270])
+            plt.title(col)
+            plt.savefig(col+'.png')
+            n=n+2
+            plt.clf()
         
         plt.close('all')
         blue = cv2.imread('Blue.png')
