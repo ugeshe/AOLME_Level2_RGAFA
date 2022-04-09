@@ -208,7 +208,7 @@ class RobotSimulation:
         color_g_display = myFont.render(str(g), 1, (0, 83, 156))
         color_b_display = myFont.render(str(b), 1, (0, 83, 156))
         time_display    = myFont.render(str(self.total_time), 1, (0, 83, 156))
-        message_1 =myFont2.render("YOU FIND THE COLOR!!!", 5, (30, 130, 53))
+        message_1 =myFont2.render("YOU FOUND THE COLOR!!!", 5, (30, 130, 53))
         message_2 =myFont2.render("DETECTING......",5, (214, 49, 104))
         
         red_min   = self.detect_color[0][0]       
