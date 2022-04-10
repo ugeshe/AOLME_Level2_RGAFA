@@ -141,7 +141,7 @@ class threshold:
             plt.ylabel('Number of occurrences',fontsize=12)
             plt.title(color[i], fontsize = 18)
             plt.xlim([0,256])
-            plt.ticklabel_format(axis="y", style="sci", scilimits=(0,0)
+            plt.ticklabel_format(axis="y", style="sci", scilimits=(0,0))
             plt.title(col)
             plt.savefig(col+'.png')
             n=n+2
