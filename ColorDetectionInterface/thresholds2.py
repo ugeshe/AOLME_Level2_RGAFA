@@ -132,7 +132,7 @@ class threshold:
         for i,col in enumerate(color):
             #histr = cv2.calcHist([self.color_img],[i],None,[256],[0,256])
             #plt.figure(color[i])
-            plt.hist(self.color_img.ravel(), color = color[i], bins=10, range=(0.0, 256.0))
+            plt.hist(self.color_img.ravel(), color = color[i], bins=10, range=(0.0, 270.0))
             #plt.plot(histr,color = col)
             plt.axvline(x=rgb_values[n], linestyle = '--', color = 'c', label=str(rgb_values[n]))
             plt.axvline(x=rgb_values[n+1],linestyle = '--', color = 'y', label=str(rgb_values[n+1]))
@@ -140,7 +140,7 @@ class threshold:
             plt.xlabel('Pixel values', fontsize=18)
             plt.ylabel('Number of occurrences',fontsize=12)
             plt.title(color[i], fontsize = 18)
-            plt.xlim([0,260])
+            plt.xlim([0,270])
             plt.title(col)
             plt.savefig(col+'.png')
             n=n+2
