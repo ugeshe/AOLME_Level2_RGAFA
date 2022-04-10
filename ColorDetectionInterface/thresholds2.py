@@ -139,10 +139,10 @@ class threshold:
             plt.legend()
             plt.xlabel('Pixel values', fontsize=18)
             plt.ylabel('Number of occurrences',fontsize=18)
-            plt.title(color[i], fontsize = 2)
+            plt.title(col, fontsize = 18)
             plt.xlim([0,256])
             plt.ticklabel_format(axis="y", style="sci", scilimits=(0,0))
-            plt.title(col)
+            #plt.title(col)
             plt.savefig(col+'.png')
             n=n+2
             plt.clf()
