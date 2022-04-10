@@ -142,8 +142,8 @@ class threshold:
             plt.title(col, fontsize = 18)
             plt.xlim([0,256])
             plt.ticklabel_format(axis="y", style="sci", scilimits=(0,0))
-            plt.xticks(fontsize=24)
-            plt.yticks(fontsize=16)
+            plt.xticks(fontsize=12)
+            plt.yticks(fontsize=12)
             #plt.title(col)
             plt.savefig(col+'.png')
             n=n+2
