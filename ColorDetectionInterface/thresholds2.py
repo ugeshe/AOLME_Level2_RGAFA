@@ -140,7 +140,7 @@ class threshold:
             plt.xlabel('Pixel values', fontsize=18)
             plt.ylabel('Number of occurrences',fontsize=12)
             plt.title(color[i], fontsize = 18)
-            plt.xlim([0,270])
+            plt.xlim([0,260])
             plt.title(col)
             plt.savefig(col+'.png')
             n=n+2
