@@ -146,7 +146,7 @@ class RobotMazeSetting:
     
             if (self.angle>=0 and self.angle<=90):
                 self.sprite.rect.centerx = self.sprite.rect.centerx + 2
-                self.sprite.rect.centery = self.sprite.rect.centery + 2
+                self.sprite.rect.centery = self.sprite.rect.centery - 2
                 print('rect centre: ', self.sprite.rect.center)
             
             # old_x, old_y = self.sprite.rect.center
