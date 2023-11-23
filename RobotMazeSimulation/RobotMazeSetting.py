@@ -33,7 +33,7 @@ class RobotMazeSetting:
         self.sprite_image_copy = self.sprite_ori  
         
         
-        self.sprite.rect.center = (55,480)
+        self.sprite.rect.center = (55, 480)
         self.r = int(math.sqrt(self.sprite_ori.get_rect().size[0]**2+self.sprite_ori.get_rect().size[1]**2))
         #print(self.sprite_ori.get_rect().size[0], self.sprite_ori.get_rect().size[1])
         
@@ -51,14 +51,16 @@ class RobotMazeSetting:
 
         
     def gen_maze(self):
-        sprite2 = self.gen_maze_block(30, 500, self.maze_color, 15, 250)
-        sprite3 = self.gen_maze_block(30, 500, self.maze_color, 485, 250)
-        sprite4 = self.gen_maze_block(400, 30, self.maze_color, 220, 15)
-        sprite5 = self.gen_maze_block(400, 30, self.maze_color, 280, 485)
-        sprite6 = self.gen_maze_block(30, 100, self.maze_color, 400, 250)
-        sprite7 = self.gen_maze_block(150, 50, self.maze_color, 250, 150)
-        sprite8 = self.gen_maze_block(50, 50,  self.maze_color, 55, 320)
-        sprite9 = self.gen_maze_block(50, 30,  self.exit_color, 445, 15)
+        # sprite2 = self.gen_maze_block(30, 500, self.maze_color, 15, 250)
+        # sprite3 = self.gen_maze_block(30, 500, self.maze_color, 485, 250)
+        # sprite4 = self.gen_maze_block(400, 30, self.maze_color, 220, 15)
+        # sprite5 = self.gen_maze_block(400, 30, self.maze_color, 280, 485)
+        # sprite6 = self.gen_maze_block(30, 100, self.maze_color, 400, 250)
+        # sprite7 = self.gen_maze_block(150, 50, self.maze_color, 250, 150)
+        # sprite8 = self.gen_maze_block(50, 50,  self.maze_color, 55, 320)
+        # sprite9 = self.gen_maze_block(50, 30,  self.exit_color, 445, 15)
+        
+        sprite2 = sprite3 = sprite4 = sprite5 = sprite6 = sprite7 = sprite8 = sprite9 = [] 
         all_list  = [self.sprite, sprite2, sprite3, sprite4, sprite5, sprite6, sprite7, sprite8, sprite9]
         maze_list = [sprite2, sprite3, sprite4, sprite5, sprite6, sprite7, sprite8]
         return all_list, maze_list, sprite9
@@ -141,19 +143,22 @@ class RobotMazeSetting:
         for i in range(0, sec+1):
             self.total_time = self.total_time + 1     
     
-            old_x, old_y = self.sprite.rect.center
-            if (self.angle>=0 and self.angle<=90):
-                self.sprite.rect.center = (round(old_x - math.sin(self.angle/180*math.pi)*self.speed),
-                                           round(old_y - math.cos(self.angle/180*math.pi)*self.speed))
-            elif (self.angle>90 and self.angle<=180):
-                self.sprite.rect.center = (round(old_x - math.sin((180-self.angle)/180*math.pi)*self.speed),
-                                           round(old_y + math.cos((180-self.angle)/180*math.pi)*self.speed))
-            elif (self.angle>180 and self.angle<=270):
-                self.sprite.rect.center = (round(old_x + math.sin((self.angle-180)/180*math.pi)*self.speed),
-                                           round(old_y + math.cos((self.angle-180)/180*math.pi)*self.speed))
-            else:
-                self.sprite.rect.center = (round(old_x + math.sin((360-self.angle)/180*math.pi)*self.speed),
-                                           round(old_y - math.cos((360-self.angle)/180*math.pi)*self.speed))
+            self.sprite.rect.centerx = self.sprite.rect.centerx + 2
+            self.sprite.rect.centery = self.sprite.rect.centery + 2
+            
+            # old_x, old_y = self.sprite.rect.center
+            # if (self.angle>=0 and self.angle<=90):
+            #     self.sprite.rect.center = (round(old_x - math.sin(self.angle/180*math.pi)*self.speed),
+            #                                round(old_y - math.cos(self.angle/180*math.pi)*self.speed))
+            # elif (self.angle>90 and self.angle<=180):
+            #     self.sprite.rect.center = (round(old_x - math.sin((180-self.angle)/180*math.pi)*self.speed),
+            #                                round(old_y + math.cos((180-self.angle)/180*math.pi)*self.speed))
+            # elif (self.angle>180 and self.angle<=270):
+            #     self.sprite.rect.center = (round(old_x + math.sin((self.angle-180)/180*math.pi)*self.speed),
+            #                                round(old_y + math.cos((self.angle-180)/180*math.pi)*self.speed))
+            # else:
+            #     self.sprite.rect.center = (round(old_x + math.sin((360-self.angle)/180*math.pi)*self.speed),
+            #                                round(old_y - math.cos((360-self.angle)/180*math.pi)*self.speed))
         
             self.check_collison()
             if self.run == False:
