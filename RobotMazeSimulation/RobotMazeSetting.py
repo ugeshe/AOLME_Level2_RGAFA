@@ -81,7 +81,8 @@ class RobotMazeSetting:
         self.all_group.draw(self.window)
         
         
-        if self.total_time > 1000:
+        # if self.total_time > 1000:
+        if self.total_time > 100:
             #pygame.display.flip()
             myFont = pygame.font.SysFont("arial", 25)
             time_label_new   = myFont.render("Time is over!!! ", 1, (214, 49, 104))
@@ -143,8 +144,9 @@ class RobotMazeSetting:
         for i in range(0, sec+1):
             self.total_time = self.total_time + 1     
     
-            self.sprite.rect.centerx = self.sprite.rect.centerx + 2
-            self.sprite.rect.centery = self.sprite.rect.centery + 2
+            if (self.angle>=0 and self.angle<=90):
+                self.sprite.rect.centerx = self.sprite.rect.centerx + 2
+                self.sprite.rect.centery = self.sprite.rect.centery + 2
             
             # old_x, old_y = self.sprite.rect.center
             # if (self.angle>=0 and self.angle<=90):
